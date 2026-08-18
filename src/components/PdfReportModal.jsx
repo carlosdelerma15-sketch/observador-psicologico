@@ -2,7 +2,8 @@ import React from 'react';
 import Modal from './Modal';
 import { getLatestEvaluation, getEvaluationsForPlayer, getGroupMetrics, getGroupDynamics, getLeadershipMap } from '../utils/storage';
 import { evaluationCategories, getCategoryAverage } from '../data/evaluationSchema';
-import { players, getInitials, staff } from '../data/players';
+import { getInitials } from '../data/players';
+import SpiderChart from './SpiderChart';
 
 export default function PdfReportModal({ isOpen, onClose, type = 'individual', player = null }) {
   if (!isOpen) return null;
@@ -12,268 +13,379 @@ export default function PdfReportModal({ isOpen, onClose, type = 'individual', p
   };
 
   const latestEval = player ? getLatestEvaluation(player.id) : null;
-  const historyEvals = player ? getEvaluationsForPlayer(player.id).slice(0, 6) : [];
+  const historyEvals = player ? getEvaluationsForPlayer(player.id).slice(0, 8) : [];
 
   const groupMetrics = getGroupMetrics();
   const latestGroupMetric = groupMetrics.length > 0 ? groupMetrics[0] : null;
   const groupDynamics = getGroupDynamics();
   const leadershipNodes = getLeadershipMap();
 
+  // Dividir categorías de evaluación en Página 1 y Página 2 para informe individual
+  const catPage1 = evaluationCategories.slice(0, 4); // Atención, Error, Confianza, Regulación
+  const catPage2 = evaluationCategories.slice(4);    // Comunicación, Motivación, Mejora, Presión
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`📄 Informe PDF — ${type === 'individual' ? player?.fullName : 'Observación Grupal Vestuario'}`}
+      title={`📄 Informe PDF (2 Páginas) — ${type === 'individual' ? player?.fullName : 'Observación Grupal'}`}
       footer={
         <>
           <button className="btn btn-secondary" onClick={onClose}>
             Cerrar
           </button>
-          <button className="btn btn-primary" onClick={handlePrint} id="btn-do-print">
-            🖨️ Imprimir / Descargar PDF
+          <button className="btn btn-primary" onClick={handlePrint} id="btn-do-print-2pages">
+            🖨️ Imprimir / Guardar como PDF (2 Páginas)
           </button>
         </>
       }
     >
-      {/* Printable Document Container */}
       <div className="pdf-report-document" id="pdf-report-document">
-        {/* Header Corporativo Athletic Club */}
-        <div
-          style={{
-            background: 'linear-gradient(90deg, #ee2523, #c41e1c)',
-            padding: '16px 20px',
-            borderRadius: '8px 8px 0 0',
-            color: '#fff',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '20px',
-          }}
-        >
-          <div>
-            <div style={{ fontSize: '1.2rem', fontWeight: 800, fontFamily: 'Outfit, sans-serif', textTransform: 'uppercase' }}>
-              ATHLETIC CLUB FEMENINO
-            </div>
-            <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-              Informe de Evaluación Psicológica y Rendimiento • Temporada 2026-27
-            </div>
-          </div>
-          <div style={{ textAlign: 'right', fontSize: '0.75rem', opacity: 0.95 }}>
-            <div>Fecha: {new Date().toLocaleDateString('es-ES')}</div>
-            <div>Liga F • Lezama</div>
-          </div>
-        </div>
 
-        {/* INFORME INDIVIDUAL */}
-        {type === 'individual' && player && (
-          <div>
-            {/* Ficha Jugadora Header */}
-            <div
-              style={{
-                display: 'flex',
-                gap: '16px',
-                padding: '16px',
-                background: 'var(--slate-800)',
-                borderRadius: '8px',
-                marginBottom: '20px',
-                border: '1px solid var(--slate-700)',
-              }}
-            >
+        {/* ========================================================== */}
+        {/* PÁGINA 1: INFORMACIÓN GENERAL Y MÉTRICAS CLAVE              */}
+        {/* ========================================================== */}
+        <div className="pdf-page pdf-page-break">
+          {/* Header Corporativo Athletic Club */}
+          <div
+            style={{
+              background: 'linear-gradient(90deg, #ee2523, #c41e1c)',
+              padding: '16px 20px',
+              borderRadius: '8px',
+              color: '#fff',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '16px',
+              boxShadow: '0 4px 12px rgba(238, 37, 35, 0.3)',
+            }}
+          >
+            <div>
+              <div style={{ fontSize: '1.3rem', fontWeight: 800, fontFamily: 'Outfit, sans-serif', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                ATHLETIC CLUB FEMENINO
+              </div>
+              <div style={{ fontSize: '0.82rem', opacity: 0.95 }}>
+                Informe de Evaluación Psicológica y Rendimiento • Temporada 2026-27 (Página 1/2)
+              </div>
+            </div>
+            <div style={{ textAlign: 'right', fontSize: '0.75rem', opacity: 0.95 }}>
+              <div>Fecha: {new Date().toLocaleDateString('es-ES')}</div>
+              <div>Liga F • Lezama</div>
+            </div>
+          </div>
+
+          {/* INFORME INDIVIDUAL - PÁGINA 1 */}
+          {type === 'individual' && player && (
+            <div>
+              {/* Ficha de Jugadora */}
               <div
                 style={{
-                  width: 64,
-                  height: 64,
-                  borderRadius: '50%',
-                  background: 'var(--slate-700)',
                   display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 800,
-                  fontSize: '1.2rem',
-                  color: '#fff',
+                  gap: '16px',
+                  padding: '16px',
+                  background: 'var(--slate-800)',
+                  borderRadius: '8px',
+                  marginBottom: '16px',
+                  border: '1px solid var(--slate-700)',
                 }}
               >
-                {getInitials(player.shortName)}
-              </div>
-              <div style={{ flex: 1 }}>
-                <h3 style={{ margin: 0, color: 'var(--ac-white)' }}>
-                  #{player.dorsal} {player.fullName}
-                </h3>
-                <div style={{ fontSize: '0.85rem', color: 'var(--ac-red)', fontWeight: 600, marginTop: '2px' }}>
-                  {player.position} • Estado: {player.status}
+                <div
+                  style={{
+                    width: 70,
+                    height: 70,
+                    borderRadius: '12px',
+                    background: 'var(--slate-900)',
+                    border: '2px solid var(--ac-red)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 800,
+                    fontSize: '1.4rem',
+                    color: '#fff',
+                    flexShrink: 0,
+                  }}
+                >
+                  {getInitials(player.shortName)}
                 </div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--slate-400)', marginTop: '4px' }}>
-                  Nacimiento: {player.birthDate || 'N/D'} • Lugar: {player.birthPlace || 'N/D'}
-                </div>
-              </div>
-            </div>
-
-            {/* Detalle de Última Evaluación */}
-            {latestEval ? (
-              <div>
-                <h4 style={{ color: 'var(--ac-white)', borderBottom: '2px solid var(--ac-red)', paddingBottom: '4px', marginBottom: '14px' }}>
-                  📋 Última Evaluación Registrada ({latestEval.evalDate} - {latestEval.sessionType})
-                </h4>
-
-                {/* Categorías y Métricas */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '20px' }}>
-                  {evaluationCategories.map((cat) => {
-                    const avg = getCategoryAverage(latestEval, cat.id);
-                    return (
-                      <div
-                        key={cat.id}
-                        style={{
-                          background: 'var(--slate-800)',
-                          padding: '12px',
-                          borderRadius: '8px',
-                          borderLeft: `4px solid ${cat.color}`,
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                          <strong style={{ fontSize: '0.85rem', color: 'var(--ac-white)' }}>
-                            {cat.icon} {cat.label}
-                          </strong>
-                          <span style={{ fontWeight: 800, color: cat.color, fontSize: '0.9rem' }}>
-                            {avg !== null ? `${avg.toFixed(1)}/10` : 'N/A'}
-                          </span>
-                        </div>
-
-                        {/* Lista de métricas individuales */}
-                        {cat.metrics.map((m) => (
-                          <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--slate-300)', marginTop: '3px' }}>
-                            <span>{m.label}</span>
-                            <strong>{latestEval[m.id] ?? '—'}</strong>
-                          </div>
-                        ))}
-
-                        {/* Respuestas abiertas */}
-                        {cat.textFields.map((f) => (
-                          latestEval[f.id] ? (
-                            <div key={f.id} style={{ marginTop: '6px', fontSize: '0.72rem', color: 'var(--slate-400)', fontStyle: 'italic' }}>
-                              "{f.label}: {latestEval[f.id]}"
-                            </div>
-                          ) : null
-                        ))}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Observaciones Generales */}
-                {latestEval.observaciones_generales && (
-                  <div style={{ background: 'var(--slate-800)', padding: '12px', borderRadius: '8px', marginBottom: '20px', border: '1px solid var(--slate-700)' }}>
-                    <strong style={{ fontSize: '0.85rem', color: 'var(--ac-white)', display: 'block', marginBottom: '4px' }}>
-                      📝 Observaciones Generales del Staff:
-                    </strong>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--slate-300)', margin: 0 }}>
-                      {latestEval.observaciones_generales}
-                    </p>
+                <div style={{ flex: 1 }}>
+                  <h3 style={{ margin: 0, color: 'var(--ac-white)', fontSize: '1.3rem' }}>
+                    #{player.dorsal} {player.fullName}
+                  </h3>
+                  <div style={{ fontSize: '0.9rem', color: 'var(--ac-red)', fontWeight: 600, marginTop: '2px' }}>
+                    {player.position} • Estado Actual: <span style={{ textTransform: 'capitalize' }}>{player.status}</span>
                   </div>
-                )}
+                  <div style={{ fontSize: '0.8rem', color: 'var(--slate-300)', marginTop: '4px', display: 'flex', gap: '16px' }}>
+                    <span><strong>Nacimiento:</strong> {player.birthDate || 'N/D'}</span>
+                    <span><strong>Lugar:</strong> {player.birthPlace || 'N/D'}</span>
+                    {player.seasons && <span><strong>Temporadas:</strong> {player.seasons}</span>}
+                    {player.officialMatches && <span><strong>Partidos:</strong> {player.officialMatches}</span>}
+                  </div>
+                </div>
               </div>
-            ) : (
-              <div style={{ padding: '20px', textAlign: 'center', color: 'var(--slate-400)' }}>
-                No hay evaluaciones registradas para esta jugadora.
-              </div>
-            )}
 
-            {/* Historial de Evaluaciones */}
-            {historyEvals.length > 0 && (
-              <div>
-                <h4 style={{ color: 'var(--ac-white)', borderBottom: '2px solid var(--slate-700)', paddingBottom: '4px', marginBottom: '10px' }}>
-                  📊 Evolución de Evaluaciones Recientes
-                </h4>
-                <table className="data-table" style={{ fontSize: '0.78rem' }}>
-                  <thead>
-                    <tr>
-                      <th>Fecha</th>
-                      <th>Sesión</th>
-                      <th>Evaluador</th>
-                      <th>Promedio General</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {historyEvals.map((e) => {
-                      const avgs = evaluationCategories
-                        .filter((c) => c.metrics.length > 0)
-                        .map((cat) => getCategoryAverage(e, cat.id))
-                        .filter((v) => v !== null);
-                      const over = avgs.length > 0 ? avgs.reduce((a, b) => a + b, 0) / avgs.length : 0;
+              {latestEval ? (
+                <div>
+                  <h4 style={{ color: 'var(--ac-white)', borderBottom: '2px solid var(--ac-red)', paddingBottom: '4px', marginBottom: '12px', fontSize: '1rem' }}>
+                    📋 Evaluación Reciente — Categorías Principales ({latestEval.evalDate} • {latestEval.sessionType})
+                  </h4>
 
+                  {/* Grid 2x2 de categorías iniciales */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                    {catPage1.map((cat) => {
+                      const avg = getCategoryAverage(latestEval, cat.id);
                       return (
-                        <tr key={e.id}>
-                          <td>{e.evalDate}</td>
-                          <td>{e.sessionType}</td>
-                          <td>{e.evaluator || 'Cuerpo Técnico'}</td>
-                          <td style={{ fontWeight: 700, color: 'var(--ac-red)' }}>{over.toFixed(1)}/10</td>
-                        </tr>
+                        <div
+                          key={cat.id}
+                          style={{
+                            background: 'var(--slate-800)',
+                            padding: '12px',
+                            borderRadius: '8px',
+                            borderLeft: `4px solid ${cat.color}`,
+                            border: '1px solid var(--slate-700)',
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                            <strong style={{ fontSize: '0.85rem', color: 'var(--ac-white)' }}>
+                              {cat.icon} {cat.label}
+                            </strong>
+                            <span style={{ fontWeight: 800, color: cat.color, fontSize: '0.95rem' }}>
+                              {avg !== null ? `${avg.toFixed(1)}/10` : 'N/A'}
+                            </span>
+                          </div>
+
+                          {cat.metrics.map((m) => (
+                            <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--slate-300)', marginTop: '3px' }}>
+                              <span>{m.label}</span>
+                              <strong style={{ color: 'var(--ac-white)' }}>{latestEval[m.id] ?? '—'}/10</strong>
+                            </div>
+                          ))}
+
+                          {cat.textFields.map((f) => (
+                            latestEval[f.id] ? (
+                              <div key={f.id} style={{ marginTop: '6px', fontSize: '0.72rem', color: 'var(--slate-400)', fontStyle: 'italic', background: 'rgba(0,0,0,0.2)', padding: '4px 6px', borderRadius: '4px' }}>
+                                "{f.label}: {latestEval[f.id]}"
+                              </div>
+                            ) : null
+                          ))}
+                        </div>
                       );
                     })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
+                  </div>
+                </div>
+              ) : (
+                <div style={{ padding: '30px', textAlign: 'center', color: 'var(--slate-400)', background: 'var(--slate-800)', borderRadius: '8px' }}>
+                  No hay evaluaciones registradas para esta jugadora.
+                </div>
+              )}
+            </div>
+          )}
 
-        {/* INFORME GRUPAL */}
-        {type === 'group' && (
-          <div>
-            <h4 style={{ color: 'var(--ac-white)', borderBottom: '2px solid var(--ac-red)', paddingBottom: '4px', marginBottom: '14px' }}>
-              👥 Estado General del Vestuario y Dinámicas
-            </h4>
+          {/* INFORME GRUPAL - PÁGINA 1 */}
+          {type === 'group' && (
+            <div>
+              <h4 style={{ color: 'var(--ac-white)', borderBottom: '2px solid var(--ac-red)', paddingBottom: '4px', marginBottom: '14px' }}>
+                👥 Resumen Ejecutivo del Vestuario y Métricas Colectivas
+              </h4>
 
-            {/* Métricas Colectivas Actuales */}
-            {latestGroupMetric ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }}>
-                <div style={{ background: 'var(--slate-800)', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--slate-400)' }}>🤝 Cohesión</div>
-                  <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#3b82f6' }}>{latestGroupMetric.cohesion}/10</div>
+              {latestGroupMetric && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }}>
+                  <div style={{ background: 'var(--slate-800)', padding: '14px', borderRadius: '8px', textAlign: 'center', border: '1px solid var(--slate-700)' }}>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--slate-400)' }}>🤝 Cohesión</div>
+                    <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#3b82f6', marginTop: '4px' }}>{latestGroupMetric.cohesion}/10</div>
+                  </div>
+                  <div style={{ background: 'var(--slate-800)', padding: '14px', borderRadius: '8px', textAlign: 'center', border: '1px solid var(--slate-700)' }}>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--slate-400)' }}>💎 Resiliencia</div>
+                    <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#22c55e', marginTop: '4px' }}>{latestGroupMetric.resiliencia}/10</div>
+                  </div>
+                  <div style={{ background: 'var(--slate-800)', padding: '14px', borderRadius: '8px', textAlign: 'center', border: '1px solid var(--slate-700)' }}>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--slate-400)' }}>🗣️ Comunicación</div>
+                    <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#8b5cf6', marginTop: '4px' }}>{latestGroupMetric.comunicacion}/10</div>
+                  </div>
+                  <div style={{ background: 'var(--slate-800)', padding: '14px', borderRadius: '8px', textAlign: 'center', border: '1px solid var(--slate-700)' }}>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--slate-400)' }}>⚖️ Asimilación Carga</div>
+                    <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#f59e0b', marginTop: '4px' }}>{latestGroupMetric.asimilacion_carga}/10</div>
+                  </div>
                 </div>
-                <div style={{ background: 'var(--slate-800)', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--slate-400)' }}>💎 Resiliencia</div>
-                  <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#22c55e' }}>{latestGroupMetric.resiliencia}/10</div>
-                </div>
-                <div style={{ background: 'var(--slate-800)', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--slate-400)' }}>🗣️ Comunicación</div>
-                  <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#8b5cf6' }}>{latestGroupMetric.comunicacion}/10</div>
-                </div>
-                <div style={{ background: 'var(--slate-800)', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--slate-400)' }}>⚖️ Asimilación Carga</div>
-                  <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#f59e0b' }}>{latestGroupMetric.asimilacion_carga}/10</div>
-                </div>
-              </div>
-            ) : null}
+              )}
 
-            {/* Resumen de Liderazgo */}
-            <div style={{ marginBottom: '20px' }}>
-              <h5 style={{ color: 'var(--ac-white)', marginBottom: '8px' }}>🔗 Estructura de Liderazgo</h5>
-              <div style={{ background: 'var(--slate-800)', padding: '12px', borderRadius: '8px', fontSize: '0.8rem' }}>
+              {/* Liderazgo en Página 1 */}
+              <div style={{ background: 'var(--slate-800)', padding: '14px', borderRadius: '8px', border: '1px solid var(--slate-700)', marginBottom: '16px' }}>
+                <strong style={{ fontSize: '0.9rem', color: 'var(--ac-white)', display: 'block', marginBottom: '8px' }}>
+                  🔗 Estructura de Liderazgo y Roles Clave:
+                </strong>
                 {leadershipNodes && leadershipNodes.length > 0 ? (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                    {leadershipNodes.slice(0, 6).map((n) => (
-                      <div key={n.playerId} style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--slate-300)' }}>
-                        <span>{n.name} ({n.role})</span>
-                        <strong>Inf: {n.influence}/10</strong>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '0.8rem' }}>
+                    {leadershipNodes.map((n) => (
+                      <div key={n.playerId} style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--slate-300)', padding: '4px 8px', background: 'rgba(0,0,0,0.2)', borderRadius: '4px' }}>
+                        <span><strong>{n.name}</strong> ({n.role})</span>
+                        <span style={{ color: 'var(--ac-red)', fontWeight: 700 }}>Inf: {n.influence}/10</span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div style={{ color: 'var(--slate-400)' }}>Sociograma configurado por la dirección técnica.</div>
+                  <div style={{ color: 'var(--slate-400)', fontSize: '0.8rem' }}>Sociograma configurado por la dirección técnica.</div>
                 )}
               </div>
             </div>
+          )}
 
-            {/* Dinámicas e Intervenciones Registradas */}
+          {/* Pie de Página 1 */}
+          <div style={{ position: 'absolute', bottom: '15px', left: '20px', right: '20px', display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--slate-500)', borderTop: '1px solid var(--slate-800)', paddingTop: '6px' }}>
+            <span>Athletic Club Femenino • Informe Técnico Confidencial</span>
+            <span>Página 1 de 2</span>
+          </div>
+        </div>
+
+
+        {/* ========================================================== */}
+        {/* PÁGINA 2: EVALUACIÓN DETALLADA, HISTORIAL Y SIGN-OFF       */}
+        {/* ========================================================== */}
+        <div className="pdf-page">
+          {/* Header Secundario de Continuación */}
+          <div
+            style={{
+              background: 'var(--slate-800)',
+              padding: '10px 16px',
+              borderRadius: '6px',
+              color: '#fff',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '16px',
+              borderLeft: '4px solid var(--ac-red)',
+            }}
+          >
             <div>
-              <h5 style={{ color: 'var(--ac-white)', marginBottom: '8px' }}>📝 Historial de Dinámicas e Intervenciones</h5>
+              <strong style={{ fontSize: '0.95rem', fontFamily: 'Outfit, sans-serif', textTransform: 'uppercase' }}>
+                ATHLETIC CLUB FEMENINO
+              </strong>
+              <span style={{ fontSize: '0.8rem', color: 'var(--slate-400)', marginLeft: '10px' }}>
+                {type === 'individual' && player ? `#${player.dorsal} ${player.fullName}` : 'Observación Grupal Vestuario'} (Página 2/2)
+              </span>
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--slate-400)' }}>
+              Lezama • {new Date().toLocaleDateString('es-ES')}
+            </div>
+          </div>
+
+          {/* INFORME INDIVIDUAL - PÁGINA 2 */}
+          {type === 'individual' && player && latestEval && (
+            <div>
+              <h4 style={{ color: 'var(--ac-white)', borderBottom: '2px solid var(--ac-red)', paddingBottom: '4px', marginBottom: '12px', fontSize: '1rem' }}>
+                🗣️ Comunicación, Motivación y Comportamiento ante la Presión
+              </h4>
+
+              {/* Grid 2x2 de categorías secundarias */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                {catPage2.map((cat) => {
+                  const avg = getCategoryAverage(latestEval, cat.id);
+                  return (
+                    <div
+                      key={cat.id}
+                      style={{
+                        background: 'var(--slate-800)',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        borderLeft: `4px solid ${cat.color}`,
+                        border: '1px solid var(--slate-700)',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                        <strong style={{ fontSize: '0.85rem', color: 'var(--ac-white)' }}>
+                          {cat.icon} {cat.label}
+                        </strong>
+                        {avg !== null && (
+                          <span style={{ fontWeight: 800, color: cat.color, fontSize: '0.95rem' }}>
+                            {avg.toFixed(1)}/10
+                          </span>
+                        )}
+                      </div>
+
+                      {cat.metrics.map((m) => (
+                        <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--slate-300)', marginTop: '3px' }}>
+                          <span>{m.label}</span>
+                          <strong style={{ color: 'var(--ac-white)' }}>{latestEval[m.id] ?? '—'}/10</strong>
+                        </div>
+                      ))}
+
+                      {cat.textFields.map((f) => (
+                        latestEval[f.id] ? (
+                          <div key={f.id} style={{ marginTop: '6px', fontSize: '0.72rem', color: 'var(--slate-400)', fontStyle: 'italic', background: 'rgba(0,0,0,0.2)', padding: '4px 6px', borderRadius: '4px' }}>
+                            "{f.label}: {latestEval[f.id]}"
+                          </div>
+                        ) : null
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Observaciones Generales del Staff */}
+              {latestEval.observaciones_generales && (
+                <div style={{ background: 'var(--slate-800)', padding: '12px', borderRadius: '8px', marginBottom: '16px', border: '1px solid var(--slate-700)' }}>
+                  <strong style={{ fontSize: '0.85rem', color: 'var(--ac-white)', display: 'block', marginBottom: '4px' }}>
+                    📝 Valoración Cualitativa del Staff:
+                  </strong>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--slate-300)', margin: 0, fontStyle: 'italic' }}>
+                    "{latestEval.observaciones_generales}"
+                  </p>
+                </div>
+              )}
+
+              {/* Historial de Evaluaciones */}
+              {historyEvals.length > 0 && (
+                <div style={{ marginBottom: '16px' }}>
+                  <h4 style={{ color: 'var(--ac-white)', borderBottom: '2px solid var(--slate-700)', paddingBottom: '4px', marginBottom: '8px', fontSize: '0.9rem' }}>
+                    📊 Evolución del Histórico Reciente
+                  </h4>
+                  <table className="data-table" style={{ fontSize: '0.75rem' }}>
+                    <thead>
+                      <tr>
+                        <th>Fecha</th>
+                        <th>Sesión</th>
+                        <th>Evaluador</th>
+                        <th>Promedio Global</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {historyEvals.map((e) => {
+                        const avgs = evaluationCategories
+                          .filter((c) => c.metrics.length > 0)
+                          .map((cat) => getCategoryAverage(e, cat.id))
+                          .filter((v) => v !== null);
+                        const over = avgs.length > 0 ? avgs.reduce((a, b) => a + b, 0) / avgs.length : 0;
+
+                        return (
+                          <tr key={e.id}>
+                            <td>{e.evalDate}</td>
+                            <td>{e.sessionType}</td>
+                            <td>{e.evaluator || 'Cuerpo Técnico'}</td>
+                            <td style={{ fontWeight: 700, color: 'var(--ac-red)' }}>{over.toFixed(1)}/10</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* INFORME GRUPAL - PÁGINA 2 */}
+          {type === 'group' && (
+            <div>
+              <h4 style={{ color: 'var(--ac-white)', borderBottom: '2px solid var(--ac-red)', paddingBottom: '4px', marginBottom: '12px', fontSize: '1rem' }}>
+                📝 Registro de Dinámicas e Intervenciones Grupales
+              </h4>
+
               {groupDynamics.length > 0 ? (
-                <table className="data-table" style={{ fontSize: '0.75rem' }}>
+                <table className="data-table" style={{ fontSize: '0.78rem', marginBottom: '20px' }}>
                   <thead>
                     <tr>
                       <th>Fecha</th>
                       <th>Evento</th>
                       <th>Título</th>
+                      <th>Descripción / Observaciones</th>
                       <th>Impacto</th>
                     </tr>
                   </thead>
@@ -282,30 +394,40 @@ export default function PdfReportModal({ isOpen, onClose, type = 'individual', p
                       <tr key={d.id}>
                         <td>{d.eventDate}</td>
                         <td>{d.eventType}</td>
-                        <td>{d.title}</td>
+                        <td style={{ fontWeight: 600 }}>{d.title}</td>
+                        <td style={{ color: 'var(--slate-300)' }}>{d.description || '—'}</td>
                         <td style={{ fontWeight: 700, color: '#22c55e' }}>{d.impactScore}/10</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               ) : (
-                <div style={{ color: 'var(--slate-400)', fontSize: '0.8rem' }}>Sin dinámicas grupales registradas.</div>
+                <div style={{ padding: '20px', background: 'var(--slate-800)', borderRadius: '8px', color: 'var(--slate-400)', fontSize: '0.85rem', marginBottom: '20px' }}>
+                  Sin dinámicas ni intervenciones grupales registradas.
+                </div>
               )}
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Firma del Staff */}
-        <div style={{ marginTop: '30px', paddingTop: '16px', borderTop: '1px dashed var(--slate-700)', display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--slate-400)' }}>
-          <div>
-            <strong>Dirección Deportiva & Área de Psicología</strong>
-            <div>Athletic Club Femenino</div>
+          {/* Firma y Cierre Oficial del Staff */}
+          <div style={{ marginTop: '30px', paddingTop: '16px', borderTop: '1px dashed var(--slate-700)', display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--slate-400)' }}>
+            <div>
+              <strong style={{ color: 'var(--ac-white)' }}>Área de Psicología y Rendimiento Deportivo</strong>
+              <div>Athletic Club Femenino • Lezama</div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div>Documento Oficial Confidencial</div>
+              <div>Cuerpo Técnico - Liga F 2026-27</div>
+            </div>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <div>Documento Confidencial • Uso Interno</div>
-            <div>Lezama</div>
+
+          {/* Pie de Página 2 */}
+          <div style={{ position: 'absolute', bottom: '15px', left: '20px', right: '20px', display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--slate-500)', borderTop: '1px solid var(--slate-800)', paddingTop: '6px' }}>
+            <span>Athletic Club Femenino • Observador Psicológico</span>
+            <span>Página 2 de 2</span>
           </div>
         </div>
+
       </div>
     </Modal>
   );
