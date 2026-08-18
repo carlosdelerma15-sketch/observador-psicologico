@@ -7,7 +7,9 @@ const STORAGE_KEYS = {
   LEADERSHIP_MAP: 'op_leadership_map',
   GROUP_DYNAMICS: 'op_group_dynamics',
   PLAYER_OVERRIDES: 'op_player_overrides',
+  TEAM_OBSERVATIONS: 'op_team_observations',
 };
+
 
 function getStore(key) {
   try {
@@ -135,3 +137,29 @@ export function getPlayerOverrides(playerId) {
 export function getAllPlayerOverrides() {
   return getStore(STORAGE_KEYS.PLAYER_OVERRIDES);
 }
+
+// === OBSERVACIÓN DEL EQUIPO (EVALUACIÓN GRUPAL COMPLETA) ===
+
+export function saveTeamObservation(observation) {
+  const list = getStore(STORAGE_KEYS.TEAM_OBSERVATIONS);
+  const newObs = {
+    ...observation,
+    id: Date.now(),
+    createdAt: new Date().toISOString(),
+  };
+  list.push(newObs);
+  setStore(STORAGE_KEYS.TEAM_OBSERVATIONS, list);
+  return newObs;
+}
+
+export function getTeamObservations() {
+  return getStore(STORAGE_KEYS.TEAM_OBSERVATIONS).sort(
+    (a, b) => new Date(b.evalDate) - new Date(a.evalDate)
+  );
+}
+
+export function getLatestTeamObservation() {
+  const list = getTeamObservations();
+  return list.length > 0 ? list[0] : null;
+}
+
