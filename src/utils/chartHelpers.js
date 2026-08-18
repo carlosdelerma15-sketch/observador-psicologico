@@ -128,6 +128,123 @@ export function drawSpiderChart(ctx, {
 }
 
 /**
+ * Dibuja un gráfico de araña comparativo con múltiples datasets (hasta 3 jugadoras)
+ * @param {CanvasRenderingContext2D} ctx - Contexto del canvas
+ * @param {Object} options - Configuración
+ */
+export function drawMultiSpiderChart(ctx, {
+  datasets = [],     // Array de { label, color, data: [{ label, value }] }
+  centerX,
+  centerY,
+  radius,
+  maxValue = 10,
+  gridColor = 'rgba(148, 163, 184, 0.2)',
+  labelColor = '#94a3b8',
+  fontSize = 11,
+}) {
+  if (datasets.length === 0 || !datasets[0].data || datasets[0].data.length < 3) return;
+
+  const numAxes = datasets[0].data.length;
+  const angleStep = (2 * Math.PI) / numAxes;
+  const startAngle = -Math.PI / 2;
+
+  // Draw grid circles
+  const gridLevels = 5;
+  for (let i = 1; i <= gridLevels; i++) {
+    const r = (radius / gridLevels) * i;
+    ctx.beginPath();
+    for (let j = 0; j <= numAxes; j++) {
+      const angle = startAngle + angleStep * j;
+      const x = centerX + r * Math.cos(angle);
+      const y = centerY + r * Math.sin(angle);
+      if (j === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = gridColor;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Draw axes
+  for (let i = 0; i < numAxes; i++) {
+    const angle = startAngle + angleStep * i;
+    const x = centerX + radius * Math.cos(angle);
+    const y = centerY + radius * Math.sin(angle);
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+    ctx.lineTo(x, y);
+    ctx.strokeStyle = gridColor;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Draw each dataset polygon
+  datasets.forEach((ds) => {
+    ctx.beginPath();
+    for (let i = 0; i <= numAxes; i++) {
+      const idx = i % numAxes;
+      const angle = startAngle + angleStep * idx;
+      const val = ds.data[idx] ? ds.data[idx].value : 0;
+      const rVal = (val / maxValue) * radius;
+      const x = centerX + rVal * Math.cos(angle);
+      const y = centerY + rVal * Math.sin(angle);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = ds.color + '22'; // Transparent fill
+    ctx.fill();
+    ctx.strokeStyle = ds.color;
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // Draw dots
+    for (let i = 0; i < numAxes; i++) {
+      const angle = startAngle + angleStep * i;
+      const val = ds.data[i] ? ds.data[i].value : 0;
+      const rVal = (val / maxValue) * radius;
+      const x = centerX + rVal * Math.cos(angle);
+      const y = centerY + rVal * Math.sin(angle);
+
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, 2 * Math.PI);
+      ctx.fillStyle = ds.color;
+      ctx.fill();
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+  });
+
+  // Draw axis labels
+  ctx.font = `${fontSize}px Inter, sans-serif`;
+  ctx.fillStyle = labelColor;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  for (let i = 0; i < numAxes; i++) {
+    const angle = startAngle + angleStep * i;
+    const labelRadius = radius + 22;
+    const x = centerX + labelRadius * Math.cos(angle);
+    const y = centerY + labelRadius * Math.sin(angle);
+
+    if (Math.abs(Math.cos(angle)) > 0.8) {
+      ctx.textAlign = Math.cos(angle) > 0 ? 'left' : 'right';
+    } else {
+      ctx.textAlign = 'center';
+    }
+
+    const label = datasets[0].data[i].label.length > 14
+      ? datasets[0].data[i].label.substring(0, 12) + '…'
+      : datasets[0].data[i].label;
+
+    ctx.fillText(label, x, y);
+  }
+}
+
+
+/**
  * Dibuja un gráfico de líneas para evolución temporal
  */
 export function drawLineChart(ctx, {

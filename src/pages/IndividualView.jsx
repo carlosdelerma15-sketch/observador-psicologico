@@ -8,11 +8,14 @@ import EvaluationForm from '../components/EvaluationForm';
 import HistoryTable from '../components/HistoryTable';
 import LineChart from '../components/LineChart';
 import SpiderChart from '../components/SpiderChart';
+import ComparePlayers from '../components/ComparePlayers';
+import PdfReportModal from '../components/PdfReportModal';
 
 export default function IndividualView() {
   const [selectedPlayerId, setSelectedPlayerId] = useState(1);
-  const [activeTab, setActiveTab] = useState('evaluate'); // 'evaluate' | 'history'
+  const [activeTab, setActiveTab] = useState('evaluate'); // 'evaluate' | 'history' | 'compare'
   const [refreshKey, setRefreshKey] = useState(0);
+  const [showPdfModal, setShowPdfModal] = useState(false);
 
   const player = getPlayerById(selectedPlayerId);
   const latestEval = getLatestEvaluation(selectedPlayerId);
@@ -35,7 +38,48 @@ export default function IndividualView() {
         onSelectPlayer={handlePlayerSelect}
       />
       <main className="main-panel" key={refreshKey}>
-        {player ? (
+        {/* Header Action Bar */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
+          <h2 className="section-title" style={{ margin: 0 }}>
+            👤 Observación Individual
+          </h2>
+
+          <button
+            className="btn btn-primary"
+            onClick={() => setShowPdfModal(true)}
+            id="btn-individual-pdf"
+            style={{ boxShadow: 'var(--shadow-md)' }}
+          >
+            📄 Informe PDF
+          </button>
+        </div>
+
+        {/* Sub-Navigation Tabs */}
+        <div className="tabs" style={{ marginBottom: 'var(--space-lg)' }}>
+          <button
+            className={`tab ${activeTab === 'evaluate' ? 'active' : ''}`}
+            onClick={() => setActiveTab('evaluate')}
+          >
+            📋 Ficha y Evaluación
+          </button>
+          <button
+            className={`tab ${activeTab === 'history' ? 'active' : ''}`}
+            onClick={() => setActiveTab('history')}
+          >
+            📊 Historial y Evolución
+          </button>
+          <button
+            className={`tab ${activeTab === 'compare' ? 'active' : ''}`}
+            onClick={() => setActiveTab('compare')}
+          >
+            ⚔️ Comparador (Máx. 3)
+          </button>
+        </div>
+
+        {/* Tab 3: Comparador de Jugadoras */}
+        {activeTab === 'compare' ? (
+          <ComparePlayers />
+        ) : player ? (
           <>
             {/* Ficha de jugadora */}
             <PlayerCard player={player} />
@@ -52,22 +96,6 @@ export default function IndividualView() {
                 <SpiderChart data={latestSpiderData} size={220} />
               </div>
             )}
-
-            {/* Tabs */}
-            <div className="tabs" style={{ marginTop: 'var(--space-lg)' }}>
-              <button
-                className={`tab ${activeTab === 'evaluate' ? 'active' : ''}`}
-                onClick={() => setActiveTab('evaluate')}
-              >
-                📋 Nueva Evaluación
-              </button>
-              <button
-                className={`tab ${activeTab === 'history' ? 'active' : ''}`}
-                onClick={() => setActiveTab('history')}
-              >
-                📊 Historial y Evolución
-              </button>
-            </div>
 
             {/* Content based on active tab */}
             {activeTab === 'evaluate' ? (
@@ -92,6 +120,14 @@ export default function IndividualView() {
             </p>
           </div>
         )}
+
+        {/* Modal de Informe PDF */}
+        <PdfReportModal
+          isOpen={showPdfModal}
+          onClose={() => setShowPdfModal(false)}
+          type="individual"
+          player={player}
+        />
       </main>
     </div>
   );

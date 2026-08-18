@@ -1174,9 +1174,39 @@ a:hover { color: var(--ac-red-light); }
   animation: fadeIn var(--transition-base) ease-out;
 }
 
-.animate-slide-up {
-  animation: slideUp var(--transition-base) ease-out;
+/* === Print Styles for PDF Report Generation === */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .modal-overlay,
+  .modal-content,
+  .pdf-report-document,
+  .pdf-report-document * {
+    visibility: visible;
+  }
+  .modal-overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: auto;
+    background: #fff !important;
+  }
+  .modal-content {
+    border: none !important;
+    box-shadow: none !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    background: #0f172a !important;
+    color: #f8fafc !important;
+  }
+  .modal-header,
+  .modal-footer {
+    display: none !important;
+  }
 }
+
 
 /* === Responsive === */
 @media (max-width: 1024px) {
