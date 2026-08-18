@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { getPlayerById } from '../data/players';
+import { players, getPlayerById } from '../data/players';
 import { getLatestEvaluation } from '../utils/storage';
 import { getAllCategoryAverages } from '../data/evaluationSchema';
 import Sidebar from '../components/Sidebar';
@@ -16,6 +16,7 @@ export default function IndividualView() {
   const [activeTab, setActiveTab] = useState('evaluate'); // 'evaluate' | 'history' | 'compare'
   const [refreshKey, setRefreshKey] = useState(0);
   const [showPdfModal, setShowPdfModal] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const player = getPlayerById(selectedPlayerId);
   const latestEval = getLatestEvaluation(selectedPlayerId);
@@ -36,10 +37,39 @@ export default function IndividualView() {
       <Sidebar
         selectedPlayerId={selectedPlayerId}
         onSelectPlayer={handlePlayerSelect}
+        isOpen={isMobileSidebarOpen}
+        onClose={() => setIsMobileSidebarOpen(false)}
       />
+
       <main className="main-panel" key={refreshKey}>
+        {/* Mobile Player Selector Bar */}
+        <div className="mobile-player-selector-bar" style={{ marginBottom: 'var(--space-md)' }}>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => setIsMobileSidebarOpen(true)}
+            id="btn-mobile-sidebar-toggle"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+          >
+            📋 Plantilla ({players.length})
+          </button>
+
+          <select
+            className="form-select"
+            value={selectedPlayerId}
+            onChange={(e) => handlePlayerSelect(Number(e.target.value))}
+            style={{ flex: 1, padding: '6px 10px', fontSize: '0.85rem' }}
+            id="select-player-mobile"
+          >
+            {players.map((p) => (
+              <option key={p.id} value={p.id}>
+                #{p.dorsal} {p.shortName} ({p.position})
+              </option>
+            ))}
+          </select>
+        </div>
+
         {/* Header Action Bar */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
+        <div className="view-header-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)', flexWrap: 'wrap', gap: '10px' }}>
           <h2 className="section-title" style={{ margin: 0 }}>
             👤 Observación Individual
           </h2>
@@ -116,7 +146,7 @@ export default function IndividualView() {
             <div className="empty-state-icon">👤</div>
             <p className="empty-state-text">Selecciona una jugadora</p>
             <p className="empty-state-hint">
-              Usa el panel lateral para elegir una jugadora de la plantilla
+              Usa el panel lateral o el menú superior para elegir una jugadora
             </p>
           </div>
         )}
