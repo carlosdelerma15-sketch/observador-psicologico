@@ -127,6 +127,7 @@ export function createEmptyTeamObservation() {
     sessionType: 'Entrenamiento',
     evaluator: '',
     observaciones_generales: '',
+    excludedCategories: [], // Ninguna excluida por defecto al iniciar nueva valoración
   };
 
   groupEvaluationCategories.forEach((cat) => {
@@ -141,10 +142,17 @@ export function createEmptyTeamObservation() {
   return obs;
 }
 
+export function isGroupCategoryExcluded(evaluation, categoryId) {
+  if (!evaluation || !evaluation.excludedCategories) return false;
+  return evaluation.excludedCategories.includes(categoryId);
+}
+
 export function getGroupCategoryAverage(evaluation, categoryId) {
+  if (isGroupCategoryExcluded(evaluation, categoryId)) return null;
   const category = groupEvaluationCategories.find((c) => c.id === categoryId);
   if (!category || category.metrics.length === 0) return null;
 
-  const values = category.metrics.map((m) => evaluation[m.id] || 0);
+  const values = category.metrics.map((m) => evaluation[m.id] ?? 5);
   return values.reduce((sum, v) => sum + v, 0) / values.length;
 }
+

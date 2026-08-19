@@ -22,6 +22,17 @@ export default function TeamObservationForm({ onSaved }) {
     setOpenCategories((prev) => ({ ...prev, [catId]: !prev[catId] }));
   };
 
+  const toggleCategoryExclusion = (catId, exclude) => {
+    setObservation((prev) => {
+      const list = prev.excludedCategories || [];
+      const updated = exclude
+        ? Array.from(new Set([...list, catId]))
+        : list.filter((id) => id !== catId);
+      return { ...prev, excludedCategories: updated };
+    });
+    setSaved(false);
+  };
+
   const handleSave = () => {
     setSaving(true);
     const savedObj = saveTeamObservation(observation);
@@ -100,32 +111,102 @@ export default function TeamObservationForm({ onSaved }) {
       {/* Categorías de evaluación en acordeón */}
       {groupEvaluationCategories.map((category) => {
         const isOpen = openCategories[category.id];
+        const isExcluded = (observation.excludedCategories || []).includes(category.id);
         const avg = getGroupCategoryAverage(observation, category.id);
 
         return (
-          <div className="accordion" key={category.id} style={{ borderColor: isOpen ? category.color : 'var(--slate-700)' }}>
-            <button
+          <div
+            className="accordion"
+            key={category.id}
+            style={{
+              borderColor: isOpen ? category.color : 'var(--slate-700)',
+              opacity: isExcluded ? 0.65 : 1,
+              filter: isExcluded ? 'grayscale(0.3)' : 'none',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <div
               className="accordion-header"
               onClick={() => toggleCategory(category.id)}
               id={`cat-team-${category.id}`}
+              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
             >
               <span className="accordion-icon">{category.icon}</span>
-              <span className="accordion-title">{category.label}</span>
-              {avg !== null && (
+              <span
+                className="accordion-title"
+                style={{
+                  textDecoration: isExcluded ? 'line-through' : 'none',
+                  color: isExcluded ? 'var(--slate-400)' : 'var(--ac-white)',
+                  flex: 1,
+                }}
+              >
+                {category.label}
+              </span>
+
+              {/* Casilla para incluir / excluir apartado */}
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '0.8rem',
+                  color: isExcluded ? '#ef4444' : '#22c55e',
+                  fontWeight: 600,
+                  marginRight: '14px',
+                  background: isExcluded ? 'rgba(239, 68, 68, 0.12)' : 'rgba(34, 197, 94, 0.12)',
+                  padding: '4px 10px',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                }}
+                onClick={(e) => e.stopPropagation()}
+                title="Desmarca la casilla para excluir este apartado de los cálculos y gráficas"
+              >
+                <input
+                  type="checkbox"
+                  checked={!isExcluded}
+                  onChange={(e) => toggleCategoryExclusion(category.id, !e.target.checked)}
+                  id={`chk-cat-team-${category.id}`}
+                />
+                <span>{isExcluded ? 'Excluido' : 'Incluido'}</span>
+              </label>
+
+              {avg !== null ? (
                 <span
                   className="accordion-avg"
                   style={{ color: category.color }}
                 >
                   {avg.toFixed(1)}/10
                 </span>
+              ) : (
+                <span style={{ fontSize: '0.75rem', color: 'var(--slate-400)', fontStyle: 'italic', marginRight: '8px' }}>
+                  [No Eval]
+                </span>
               )}
               <span className={`accordion-chevron ${isOpen ? 'open' : ''}`}>
                 ▼
               </span>
-            </button>
+            </div>
 
             {isOpen && (
               <div className="accordion-body">
+                {isExcluded && (
+                  <div
+                    style={{
+                      background: 'rgba(239, 68, 68, 0.15)',
+                      color: '#fca5a5',
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      fontSize: '0.8rem',
+                      marginBottom: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    🚫 <strong>Apartado Excluido:</strong> Este apartado está desactivado para esta valoración colectiva. No influirá en promedios del equipo ni informes PDF.
+                  </div>
+                )}
+
                 {/* Métricas numéricas */}
                 {category.metrics.map((metric) => (
                   <SliderMetric
@@ -135,6 +216,7 @@ export default function TeamObservationForm({ onSaved }) {
                     value={observation[metric.id]}
                     onChange={(val) => updateField(metric.id, val)}
                     color={category.color}
+                    disabled={isExcluded}
                   />
                 ))}
 
@@ -148,6 +230,7 @@ export default function TeamObservationForm({ onSaved }) {
                       value={observation[field.id]}
                       onChange={(e) => updateField(field.id, e.target.value)}
                       id={`text-team-${field.id}`}
+                      disabled={isExcluded}
                     />
                   </div>
                 ))}
@@ -156,6 +239,7 @@ export default function TeamObservationForm({ onSaved }) {
           </div>
         );
       })}
+
 
       {/* Observaciones generales */}
       <div className="form-group" style={{ marginTop: 'var(--space-md)' }}>

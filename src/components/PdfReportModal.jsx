@@ -1,8 +1,9 @@
 import React from 'react';
 import Modal from './Modal';
 import { getLatestEvaluation, getEvaluationsForPlayer, getGroupMetrics, getGroupDynamics, getLeadershipMap, getLatestTeamObservation, getTeamObservations } from '../utils/storage';
-import { evaluationCategories, getCategoryAverage } from '../data/evaluationSchema';
-import { groupEvaluationCategories, getGroupCategoryAverage } from '../data/groupSchema';
+import { evaluationCategories, getCategoryAverage, isCategoryExcluded } from '../data/evaluationSchema';
+import { groupEvaluationCategories, getGroupCategoryAverage, isGroupCategoryExcluded } from '../data/groupSchema';
+
 import { getInitials } from '../data/players';
 
 export default function PdfReportModal({ isOpen, onClose, type = 'individual', player = null }) {
@@ -132,6 +133,7 @@ export default function PdfReportModal({ isOpen, onClose, type = 'individual', p
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
                     {catPage1.map((cat) => {
+                      const isExcluded = isCategoryExcluded(latestEval, cat.id);
                       const avg = getCategoryAverage(latestEval, cat.id);
                       return (
                         <div
@@ -140,36 +142,46 @@ export default function PdfReportModal({ isOpen, onClose, type = 'individual', p
                             background: 'var(--slate-800)',
                             padding: '12px',
                             borderRadius: '8px',
-                            borderLeft: `4px solid ${cat.color}`,
+                            borderLeft: `4px solid ${isExcluded ? 'var(--slate-600)' : cat.color}`,
                             border: '1px solid var(--slate-700)',
+                            opacity: isExcluded ? 0.65 : 1,
                           }}
                         >
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                            <strong style={{ fontSize: '0.85rem', color: 'var(--ac-white)' }}>
+                            <strong style={{ fontSize: '0.85rem', color: isExcluded ? 'var(--slate-400)' : 'var(--ac-white)' }}>
                               {cat.icon} {cat.label}
                             </strong>
-                            <span style={{ fontWeight: 800, color: cat.color, fontSize: '0.95rem' }}>
-                              {avg !== null ? `${avg.toFixed(1)}/10` : 'N/A'}
+                            <span style={{ fontWeight: 800, color: isExcluded ? 'var(--slate-400)' : cat.color, fontSize: '0.95rem' }}>
+                              {isExcluded ? '[Excluido]' : (avg !== null ? `${avg.toFixed(1)}/10` : 'N/A')}
                             </span>
                           </div>
 
-                          {cat.metrics.map((m) => (
-                            <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--slate-300)', marginTop: '3px' }}>
-                              <span>{m.label}</span>
-                              <strong style={{ color: 'var(--ac-white)' }}>{latestEval[m.id] ?? '—'}/10</strong>
-                            </div>
-                          ))}
+                          {!isExcluded ? (
+                            <>
+                              {cat.metrics.map((m) => (
+                                <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--slate-300)', marginTop: '3px' }}>
+                                  <span>{m.label}</span>
+                                  <strong style={{ color: 'var(--ac-white)' }}>{latestEval[m.id] ?? '—'}/10</strong>
+                                </div>
+                              ))}
 
-                          {cat.textFields.map((f) => (
-                            latestEval[f.id] ? (
-                              <div key={f.id} style={{ marginTop: '6px', fontSize: '0.72rem', color: 'var(--slate-400)', fontStyle: 'italic', background: 'rgba(0,0,0,0.2)', padding: '4px 6px', borderRadius: '4px' }}>
-                                "{f.label}: {latestEval[f.id]}"
-                              </div>
-                            ) : null
-                          ))}
+                              {cat.textFields.map((f) => (
+                                latestEval[f.id] ? (
+                                  <div key={f.id} style={{ marginTop: '6px', fontSize: '0.72rem', color: 'var(--slate-400)', fontStyle: 'italic', background: 'rgba(0,0,0,0.2)', padding: '4px 6px', borderRadius: '4px' }}>
+                                    "{f.label}: {latestEval[f.id]}"
+                                  </div>
+                                ) : null
+                              ))}
+                            </>
+                          ) : (
+                            <div style={{ fontSize: '0.75rem', color: '#fca5a5', fontStyle: 'italic' }}>
+                              (Apartado excluido en esta valoración)
+                            </div>
+                          )}
                         </div>
                       );
                     })}
+
                   </div>
                 </div>
               ) : (
@@ -328,6 +340,7 @@ export default function PdfReportModal({ isOpen, onClose, type = 'individual', p
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
                 {catPage2.map((cat) => {
+                  const isExcluded = isCategoryExcluded(latestEval, cat.id);
                   const avg = getCategoryAverage(latestEval, cat.id);
                   return (
                     <div
@@ -336,38 +349,46 @@ export default function PdfReportModal({ isOpen, onClose, type = 'individual', p
                         background: 'var(--slate-800)',
                         padding: '12px',
                         borderRadius: '8px',
-                        borderLeft: `4px solid ${cat.color}`,
+                        borderLeft: `4px solid ${isExcluded ? 'var(--slate-600)' : cat.color}`,
                         border: '1px solid var(--slate-700)',
+                        opacity: isExcluded ? 0.65 : 1,
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                        <strong style={{ fontSize: '0.85rem', color: 'var(--ac-white)' }}>
+                        <strong style={{ fontSize: '0.85rem', color: isExcluded ? 'var(--slate-400)' : 'var(--ac-white)' }}>
                           {cat.icon} {cat.label}
                         </strong>
-                        {avg !== null && (
-                          <span style={{ fontWeight: 800, color: cat.color, fontSize: '0.95rem' }}>
-                            {avg.toFixed(1)}/10
-                          </span>
-                        )}
+                        <span style={{ fontWeight: 800, color: isExcluded ? 'var(--slate-400)' : cat.color, fontSize: '0.95rem' }}>
+                          {isExcluded ? '[Excluido]' : (avg !== null ? `${avg.toFixed(1)}/10` : 'N/A')}
+                        </span>
                       </div>
 
-                      {cat.metrics.map((m) => (
-                        <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--slate-300)', marginTop: '3px' }}>
-                          <span>{m.label}</span>
-                          <strong style={{ color: 'var(--ac-white)' }}>{latestEval[m.id] ?? '—'}/10</strong>
-                        </div>
-                      ))}
+                      {!isExcluded ? (
+                        <>
+                          {cat.metrics.map((m) => (
+                            <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--slate-300)', marginTop: '3px' }}>
+                              <span>{m.label}</span>
+                              <strong style={{ color: 'var(--ac-white)' }}>{latestEval[m.id] ?? '—'}/10</strong>
+                            </div>
+                          ))}
 
-                      {cat.textFields.map((f) => (
-                        latestEval[f.id] ? (
-                          <div key={f.id} style={{ marginTop: '6px', fontSize: '0.72rem', color: 'var(--slate-400)', fontStyle: 'italic', background: 'rgba(0,0,0,0.2)', padding: '4px 6px', borderRadius: '4px' }}>
-                            "{f.label}: {latestEval[f.id]}"
-                          </div>
-                        ) : null
-                      ))}
+                          {cat.textFields.map((f) => (
+                            latestEval[f.id] ? (
+                              <div key={f.id} style={{ marginTop: '6px', fontSize: '0.72rem', color: 'var(--slate-400)', fontStyle: 'italic', background: 'rgba(0,0,0,0.2)', padding: '4px 6px', borderRadius: '4px' }}>
+                                "{f.label}: {latestEval[f.id]}"
+                              </div>
+                            ) : null
+                          ))}
+                        </>
+                      ) : (
+                        <div style={{ fontSize: '0.75rem', color: '#fca5a5', fontStyle: 'italic' }}>
+                          (Apartado excluido en esta valoración)
+                        </div>
+                      )}
                     </div>
                   );
                 })}
+
               </div>
 
               {latestEval.observaciones_generales && (

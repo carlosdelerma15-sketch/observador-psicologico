@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { players, getPlayerById, getInitials, STATUS_COLORS } from '../data/players';
 import { getLatestEvaluation, getEvaluationsForPlayer } from '../utils/storage';
-import { evaluationCategories, getAllCategoryAverages } from '../data/evaluationSchema';
+import { evaluationCategories, getAllCategoryAverages, getCategoryAverage } from '../data/evaluationSchema';
+
 import { drawMultiSpiderChart, setupHiDPI } from '../utils/chartHelpers';
 
 const PLAYER_COLORS = ['#ee2523', '#3b82f6', '#22c55e'];
@@ -209,15 +210,14 @@ export default function ComparePlayers() {
               {categoriesWithMetrics.map((cat) => {
                 const values = selectedPlayers.map((player) => {
                   const latest = getLatestEvaluation(player.id);
-                  if (!latest) return 0;
-                  const categoryMetrics = cat.metrics.map((m) => latest[m.id] || 0);
-                  if (categoryMetrics.length === 0) return 0;
-                  return categoryMetrics.reduce((a, b) => a + b, 0) / categoryMetrics.length;
+                  if (!latest) return null;
+                  return getCategoryAverage(latest, cat.id);
                 });
 
-                const maxVal = Math.max(...values);
-                const minVal = Math.min(...values);
-                const diff = maxVal - minVal;
+                const validValues = values.filter((v) => v !== null);
+                const maxVal = validValues.length > 0 ? Math.max(...validValues) : 0;
+                const minVal = validValues.length > 0 ? Math.min(...validValues) : 0;
+                const diff = validValues.length > 1 ? maxVal - minVal : 0;
 
                 return (
                   <tr key={cat.id}>
@@ -231,19 +231,20 @@ export default function ComparePlayers() {
                           textAlign: 'center',
                           fontWeight: 700,
                           fontFamily: 'Outfit, sans-serif',
-                          color: PLAYER_COLORS[idx],
+                          color: val !== null ? PLAYER_COLORS[idx] : 'var(--slate-500)',
                           fontSize: '1rem',
                         }}
                       >
-                        {val ? val.toFixed(1) : '—'}
+                        {val !== null ? val.toFixed(1) : '—'}
                       </td>
                     ))}
                     <td style={{ textAlign: 'center', fontSize: '0.85rem', color: diff > 2 ? '#f59e0b' : 'var(--slate-400)' }}>
-                      {diff ? `±${diff.toFixed(1)}` : '0.0'}
+                      {validValues.length > 1 ? `±${diff.toFixed(1)}` : '—'}
                     </td>
                   </tr>
                 );
               })}
+
             </tbody>
           </table>
         </div>

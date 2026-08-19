@@ -145,7 +145,7 @@ export function getAllTextFieldIds() {
   return ids;
 }
 
-// Helper: crear evaluación vacía
+// Helper: crear evaluación vacía (todas las categorías activas por defecto)
 export function createEmptyEvaluation(playerId) {
   const evaluation = {
     playerId,
@@ -153,6 +153,7 @@ export function createEmptyEvaluation(playerId) {
     sessionType: 'Entrenamiento',
     evaluator: '',
     observaciones_generales: '',
+    excludedCategories: [], // Ninguna excluida en cada nueva evaluación
   };
 
   evaluationCategories.forEach((cat) => {
@@ -167,23 +168,32 @@ export function createEmptyEvaluation(playerId) {
   return evaluation;
 }
 
-// Helper: calcular promedio de una categoría
+// Helper: verificar si una categoría está excluida
+export function isCategoryExcluded(evaluation, categoryId) {
+  if (!evaluation || !evaluation.excludedCategories) return false;
+  return evaluation.excludedCategories.includes(categoryId);
+}
+
+// Helper: calcular promedio de una categoría (devuelve null si está excluida)
 export function getCategoryAverage(evaluation, categoryId) {
+  if (isCategoryExcluded(evaluation, categoryId)) return null;
   const category = evaluationCategories.find((c) => c.id === categoryId);
   if (!category || category.metrics.length === 0) return null;
 
-  const values = category.metrics.map((m) => evaluation[m.id] || 0);
+  const values = category.metrics.map((m) => evaluation[m.id] ?? 5);
   return values.reduce((sum, v) => sum + v, 0) / values.length;
 }
 
-// Helper: calcular promedios de todas las categorías para spider chart
+// Helper: calcular promedios de todas las categorías activas para spider chart
 export function getAllCategoryAverages(evaluation) {
   return evaluationCategories
-    .filter((c) => c.metrics.length > 0)
+    .filter((c) => c.metrics.length > 0 && !isCategoryExcluded(evaluation, c.id))
     .map((cat) => ({
+      id: cat.id,
       label: cat.label,
       shortLabel: cat.label.split(' ')[0],
       value: getCategoryAverage(evaluation, cat.id),
       color: cat.color,
     }));
 }
+
